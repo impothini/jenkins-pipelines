@@ -21,16 +21,21 @@ pipeline {
         stage('Docker Build') {
             steps {
                 script{
-                    dockerImage = docker.build registry_name
+                    dir(image) {
+                        dockerImage = docker.build registry_name
+                    }
+                    
                 }
             }
         }
         stage('Push Image') {
           steps{
             script {
+                dir(image) {
                     docker.withRegistry(registry_url, "ecr:us-west-2"+ ":" +registryCredential) {
                      dockerImage.push("${image}-${gitVar.GIT_LOCAL_BRANCH}-${env.BUILD_NUMBER}")
                     dockerImage.push("latest")
+                }
               }
             }
           }
