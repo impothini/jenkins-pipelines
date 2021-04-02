@@ -1,0 +1,40 @@
+pipeline {
+    agent any
+    options {
+        ansiColor('xterm')
+    }
+    environment {
+        image = "${IMAGE_NAME}"
+        registry_name = "${REPOSITORY_NAME}"
+        registry_url = "${REGISTRY_URL}"
+        registryCredential = "${CREDENTIAL}"
+        repo_url = "${GIT_URL}"
+  }
+    stages {
+        stage('scm checkout') {
+            steps {
+                script{
+                    gitVar= git ( branch: 'master', url: repo_url)
+                }
+            }
+        }
+        stage('Docker Build') {
+            steps {
+                script{
+                    dockerImage = docker.build registry_name
+                }
+            }
+        }
+        stage('Push Image') {
+          steps{
+            script {
+                    docker.withRegistry(registry_url, "ecr:us-west-2"+ ":" +registryCredential) {
+                     dockerImage.push("${image}-${gitVar.GIT_LOCAL_BRANCH}-${env.BUILD_NUMBER}")
+                    dockerImage.push("latest")
+              }
+            }
+          }
+        }
+    }
+}
+
